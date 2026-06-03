@@ -1,6 +1,8 @@
 import math
 from dataclasses import dataclass, field
-from src.environments.generic import ObjectEnvironment, earth
+from src.environments.generic import ObjectEnvironment, AtmosphereLayer, earth
+from src.environments.atmosphere import troposphere
+from src.utils.units import hpa2pa
 
 
 @dataclass
@@ -63,7 +65,28 @@ class RocketStage:
 
     @property
     def get_thrust_interpolation_preasure(self):
-        pass
+        atmosphere = self.environment.atmosphere
+        avg_presure = atmosphere.avg_presure
+        presure_in_pa = hpa2pa(min(atmosphere.presure_range))
+
+        return self.thrust_sea_level + (self.thrust_vacuum - self.thrust_sea_level) * (
+            1 - (avg_presure / presure_in_pa)
+        )
+
+    @property
+    def get_isp_presure(self):
+        atmosphere = self.environment.atmosphere
+        avg_presure = atmosphere.avg_presure
+        presure_in_pa = hpa2pa(min(atmosphere.presure_range))
+        return self.isp_sea_level + (self.isp_vacuum - self.isp_sea_level) * (
+            1 - (avg_presure / presure_in_pa)
+        )
+
+    def set_environment_atmosphere(self, atmosphere: AtmosphereLayer):
+        self.environment.atmosphere = atmosphere
+
+    def update(self):
+        self.set_environment_atmosphere(troposphere)
 
     def consume(self):
         pass
